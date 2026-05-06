@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriTrack | Smart Food & Health Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-animated">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <header class="glass-header">
+            <h1>NutriTrack</h1>
+            <p>Smart Food & Health Monitor</p>
+        </header>
+
+        <main class="grid-layout">
+            <div class="left-column">
+                <section class="glass-card input-section">
+                    <h2>What did you eat?</h2>
+                    <div class="input-wrapper">
+                        <input type="text" id="foodInput" placeholder="e.g., Apple, Pizza, Salad..." autocomplete="off">
+                        <button id="addBtn" class="btn-primary">Add Food</button>
+                        <div id="suggestionsBox" class="suggestions hidden"></div>
+                    </div>
+                </section>
+
+                <section class="glass-card history-section">
+                    <h2>Today's Log</h2>
+                    <ul id="foodList" class="food-list">
+                        <li class="empty-state">No foods logged yet. Start typing above!</li>
+                    </ul>
+                </section>
+            </div>
+
+            <div class="right-column">
+                <section class="glass-card dashboard-section">
+                    <h2>Daily Nutrition</h2>
+                    
+                    <div class="nutrient-tracker">
+                        <div class="nutrient-header">
+                            <span>Calories</span>
+                            <span id="calText">0 / 2000 kcal</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-fill cal-fill" id="calFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="nutrient-tracker">
+                        <div class="nutrient-header">
+                            <span>Protein</span>
+                            <span id="proteinText">0 / 50g</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-fill protein-fill" id="proteinFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="nutrient-tracker">
+                        <div class="nutrient-header">
+                            <span>Fat</span>
+                            <span id="fatText">0 / 70g</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-fill fat-fill" id="fatFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="nutrient-tracker">
+                        <div class="nutrient-header">
+                            <span>Carbs</span>
+                            <span id="carbsText">0 / 260g</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-fill carbs-fill" id="carbsFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="nutrient-tracker">
+                        <div class="nutrient-header">
+                            <span>Sugar</span>
+                            <span id="sugarText">0 / 50g</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-fill sugar-fill" id="sugarFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="nutrient-tracker">
+                        <div class="nutrient-header">
+                            <span>Sodium</span>
+                            <span id="sodiumText">0 / 2300mg</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-fill sodium-fill" id="sodiumFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="alertsContainer" class="alerts-container">
+                    <!-- Dynamic alerts will appear here -->
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
