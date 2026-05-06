@@ -2,7 +2,7 @@ let foodDatabase = {};
 let macroChart;
 
 // API Token Integration
-const DEFAULT_TOKEN = "AQ.Ab8RN6IZUFLOCcuMtFXkVrU0crcfoH9jFnKeAr2p38JK688-DA";
+const DEFAULT_TOKEN = "AIzaSyDcFGrhRhuqunJgxMJ49YfnzovhbtHSoUY";
 
 // Initialize Chart on load
 document.addEventListener('DOMContentLoaded', () => {
