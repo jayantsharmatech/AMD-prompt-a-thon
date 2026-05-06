@@ -559,3 +559,18 @@ input[type="text"]:focus, input[type="number"]:focus {
     50% { opacity: 0.8; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
     100% { opacity: 1; box-shadow: 0 0 10px var(--danger-glow); }
 }
+
+/* Spinner */
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(14, 165, 233, 0.2);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

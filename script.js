@@ -1,6 +1,9 @@
 let foodDatabase = {};
 let macroChart;
 
+// API Token Integration
+const DEFAULT_TOKEN = "AQ.Ab8RN6IZUFLOCcuMtFXkVrU0crcfoH9jFnKeAr2p38JK688-DA";
+
 // Initialize Chart on load
 document.addEventListener('DOMContentLoaded', () => {
     initChart();
@@ -53,26 +56,16 @@ const addBtn = document.getElementById('addBtn');
 const foodList = document.getElementById('foodList');
 const alertsContainer = document.getElementById('alertsContainer');
 
-// Modal Elements
-const customFoodModal = document.getElementById('customFoodModal');
-const closeModalBtn = document.getElementById('closeModal');
-const saveCustomBtn = document.getElementById('saveCustomBtn');
-
 function initChart() {
     const ctx = document.getElementById('macroChart').getContext('2d');
     
-    // Gradient definitions could be added, but solid vibrant colors fit light theme well
     macroChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Protein (g)', 'Fat (g)', 'Carbs (g)'],
             datasets: [{
-                data: [0, 0, 0], // Initial empty state
-                backgroundColor: [
-                    '#6366f1', // Indigo
-                    '#f59e0b', // Amber/Orange
-                    '#10b981'  // Emerald
-                ],
+                data: [0, 0, 0],
+                backgroundColor: ['#6366f1', '#f59e0b', '#10b981'],
                 borderColor: '#ffffff',
                 borderWidth: 2,
                 hoverOffset: 5
@@ -134,18 +127,19 @@ foodInput.addEventListener('input', (e) => {
             div.addEventListener('click', () => {
                 foodInput.value = match;
                 suggestionsBox.classList.add('hidden');
+                addBtn.click();
             });
             suggestionsBox.appendChild(div);
         });
     } else {
-        // Show "Add Custom Food" option
+        // Show seamless fetch option
         suggestionsBox.classList.remove('hidden');
         const div = document.createElement('div');
         div.className = 'suggestion-item';
-        div.innerHTML = `<span class="suggestion-name" style="color: #0ea5e9;">+ Init custom entry: "${val}"</span>`;
+        div.innerHTML = `<span class="suggestion-name" style="color: #0ea5e9;">✨ AI Auto-Scan: "${val}"</span>`;
         div.addEventListener('click', () => {
-            openCustomModal(val);
             suggestionsBox.classList.add('hidden');
+            startPredictionFlow(val);
         });
         suggestionsBox.appendChild(div);
     }
@@ -167,7 +161,7 @@ addBtn.addEventListener('click', () => {
         addFoodToLog(foodName, foodDatabase[foodName]);
         foodInput.value = '';
     } else {
-        openCustomModal(foodName);
+        startPredictionFlow(foodName);
     }
 });
 
@@ -191,7 +185,6 @@ function addFoodToLog(name, nutrientData) {
     updateTotals();
 }
 
-// Ensure function is exposed globally for onclick handlers in innerHTML
 window.removeFoodFromLog = function(id) {
     loggedFoods = loggedFoods.filter(food => food.id !== id);
     renderFoodList();
@@ -206,7 +199,6 @@ function renderFoodList() {
         return;
     }
 
-    // Render in reverse to show newest first
     [...loggedFoods].reverse().forEach(food => {
         const li = document.createElement('li');
         li.innerHTML = `
@@ -221,17 +213,8 @@ function renderFoodList() {
 }
 
 function updateTotals() {
-    // Reset totals
-    currentIntake = {
-        calories: 0,
-        protein: 0,
-        fat: 0,
-        carbs: 0,
-        sugar: 0,
-        sodium: 0
-    };
+    currentIntake = { calories: 0, protein: 0, fat: 0, carbs: 0, sugar: 0, sodium: 0 };
 
-    // Recalculate
     loggedFoods.forEach(food => {
         currentIntake.calories += food.nutrients.calories;
         currentIntake.protein += food.nutrients.protein;
@@ -253,9 +236,7 @@ function updateDashboard() {
     updateNutrient('sugar', 'sugar', 'g');
     updateNutrient('sodium', 'sodium', 'mg');
     
-    // Update Chart
     if (macroChart) {
-        // Only update chart if there are actual macros logged, otherwise show 0
         const totalMacros = currentIntake.protein + currentIntake.fat + currentIntake.carbs;
         if (totalMacros > 0) {
             macroChart.data.datasets[0].data = [currentIntake.protein, currentIntake.fat, currentIntake.carbs];
@@ -287,7 +268,7 @@ function updateNutrient(prefix, key, unit) {
 }
 
 function checkLimits() {
-    alertsContainer.innerHTML = ''; // clear all and rebuild
+    alertsContainer.innerHTML = ''; 
     activeAlerts.clear();
 
     const nutrients = Object.keys(dailyLimits);
@@ -302,12 +283,7 @@ function checkLimits() {
 
 function createAlert(nutrientKey) {
     const iconMap = {
-        calories: '⚡',
-        protein: '🧬',
-        fat: '🟡',
-        carbs: '🔷',
-        sugar: '⚠️',
-        sodium: '🔴'
+        calories: '⚡', protein: '🧬', fat: '🟡', carbs: '🔷', sugar: '⚠️', sodium: '🔴'
     };
 
     const alertCard = document.createElement('div');
@@ -322,41 +298,60 @@ function createAlert(nutrientKey) {
     alertsContainer.appendChild(alertCard);
 }
 
-// Custom Modal Logic
-function openCustomModal(prefillName = "") {
-    document.getElementById('customName').value = prefillName.charAt(0).toUpperCase() + prefillName.slice(1);
-    document.getElementById('customCal').value = 0;
-    document.getElementById('customProtein').value = 0;
-    document.getElementById('customFat').value = 0;
-    document.getElementById('customCarbs').value = 0;
-    document.getElementById('customSugar').value = 0;
-    document.getElementById('customSodium').value = 0;
+// Seamless API Prediction Flow
+async function startPredictionFlow(foodName) {
+    const originalBtnText = addBtn.innerHTML;
+    addBtn.innerHTML = '<span class="spinner" style="width:15px; height:15px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:5px; border-top-color: white;"></span> Scanning...';
+    addBtn.disabled = true;
     
-    customFoodModal.classList.remove('hidden');
+    try {
+        let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        const apiKey = localStorage.getItem('gemini_api_key') || DEFAULT_TOKEN;
+
+        if (apiKey.startsWith('AIza')) {
+            url += `?key=${apiKey}`;
+        } else {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+        
+        const promptText = `Provide the nutritional values for 1 serving of "${foodName}". Return ONLY a valid JSON object (no markdown, no backticks, no explanations) with exactly these keys: calories, protein, fat, carbs, sugar, sodium. The values must be numbers.`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{ text: promptText }]
+                }],
+                generationConfig: {
+                    temperature: 0.1
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const textResponse = data.candidates[0].content.parts[0].text;
+        
+        const cleanJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+        const nutrientData = JSON.parse(cleanJson);
+        
+        foodDatabase[foodName] = nutrientData;
+        addFoodToLog(foodName, nutrientData);
+        foodInput.value = '';
+        
+    } catch (error) {
+        console.error("Prediction Error:", error);
+        alert("AI Scan failed. " + error.message);
+    } finally {
+        addBtn.innerHTML = originalBtnText;
+        addBtn.disabled = false;
+    }
 }
-
-closeModalBtn.addEventListener('click', () => {
-    customFoodModal.classList.add('hidden');
-});
-
-saveCustomBtn.addEventListener('click', () => {
-    const name = document.getElementById('customName').value.toLowerCase().trim();
-    if (!name) return;
-
-    const nutrientData = {
-        calories: parseFloat(document.getElementById('customCal').value) || 0,
-        protein: parseFloat(document.getElementById('customProtein').value) || 0,
-        fat: parseFloat(document.getElementById('customFat').value) || 0,
-        carbs: parseFloat(document.getElementById('customCarbs').value) || 0,
-        sugar: parseFloat(document.getElementById('customSugar').value) || 0,
-        sodium: parseFloat(document.getElementById('customSodium').value) || 0
-    };
-
-    // Save to our local memory database so it can be searched again in this session
-    foodDatabase[name] = nutrientData;
-    
-    addFoodToLog(name, nutrientData);
-    
-    customFoodModal.classList.add('hidden');
-    foodInput.value = '';
-});
