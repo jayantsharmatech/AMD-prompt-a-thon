@@ -58,7 +58,7 @@ const alertsContainer = document.getElementById('alertsContainer');
 
 function initChart() {
     const ctx = document.getElementById('macroChart').getContext('2d');
-    
+
     macroChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -107,14 +107,14 @@ function initChart() {
 foodInput.addEventListener('input', (e) => {
     const val = e.target.value.toLowerCase();
     suggestionsBox.innerHTML = '';
-    
+
     if (!val) {
         suggestionsBox.classList.add('hidden');
         return;
     }
-    
+
     const matches = Object.keys(foodDatabase).filter(food => food.includes(val));
-    
+
     if (matches.length > 0) {
         suggestionsBox.classList.remove('hidden');
         matches.forEach(match => {
@@ -174,7 +174,7 @@ foodInput.addEventListener('keypress', (e) => {
 
 function addFoodToLog(name, nutrientData) {
     const id = Date.now().toString() + Math.floor(Math.random() * 1000);
-    
+
     loggedFoods.push({
         id,
         name,
@@ -185,7 +185,7 @@ function addFoodToLog(name, nutrientData) {
     updateTotals();
 }
 
-window.removeFoodFromLog = function(id) {
+window.removeFoodFromLog = function (id) {
     loggedFoods = loggedFoods.filter(food => food.id !== id);
     renderFoodList();
     updateTotals();
@@ -193,7 +193,7 @@ window.removeFoodFromLog = function(id) {
 
 function renderFoodList() {
     foodList.innerHTML = '';
-    
+
     if (loggedFoods.length === 0) {
         foodList.innerHTML = '<li class="empty-state">System standing by. Awaiting food input.</li>';
         return;
@@ -235,7 +235,7 @@ function updateDashboard() {
     updateNutrient('carbs', 'carbs', 'g');
     updateNutrient('sugar', 'sugar', 'g');
     updateNutrient('sodium', 'sodium', 'mg');
-    
+
     if (macroChart) {
         const totalMacros = currentIntake.protein + currentIntake.fat + currentIntake.carbs;
         if (totalMacros > 0) {
@@ -250,11 +250,11 @@ function updateDashboard() {
 function updateNutrient(prefix, key, unit) {
     const textEl = document.getElementById(`${prefix}Text`);
     const fillEl = document.getElementById(`${prefix}Fill`);
-    
+
     const current = Math.round(currentIntake[key] * 10) / 10;
     const limit = dailyLimits[key];
     const percentage = Math.min((current / limit) * 100, 100);
-    
+
     textEl.innerText = `${current} / ${limit}${unit}`;
     fillEl.style.width = `${percentage}%`;
 
@@ -268,11 +268,11 @@ function updateNutrient(prefix, key, unit) {
 }
 
 function checkLimits() {
-    alertsContainer.innerHTML = ''; 
+    alertsContainer.innerHTML = '';
     activeAlerts.clear();
 
     const nutrients = Object.keys(dailyLimits);
-    
+
     nutrients.forEach(key => {
         if (currentIntake[key] > dailyLimits[key]) {
             activeAlerts.add(key);
@@ -303,7 +303,7 @@ async function startPredictionFlow(foodName) {
     const originalBtnText = addBtn.innerHTML;
     addBtn.innerHTML = '<span class="spinner" style="width:15px; height:15px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:5px; border-top-color: white;"></span> Scanning...';
     addBtn.disabled = true;
-    
+
     try {
         let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
         const headers = {
@@ -312,14 +312,11 @@ async function startPredictionFlow(foodName) {
 
         const apiKey = localStorage.getItem('gemini_api_key') || DEFAULT_TOKEN;
 
-        if (apiKey.startsWith('AIza')) {
-            url += `?key=${apiKey}`;
-        } else {
-            headers['Authorization'] = `Bearer ${apiKey}`;
-        }
-        
+        // Force passing the token as an API key query param
+        url += `?key=${apiKey}`;
+
         const promptText = `Provide the nutritional values for 1 serving of "${foodName}". Return ONLY a valid JSON object (no markdown, no backticks, no explanations) with exactly these keys: calories, protein, fat, carbs, sugar, sodium. The values must be numbers.`;
-        
+
         const response = await fetch(url, {
             method: 'POST',
             headers: headers,
@@ -339,14 +336,14 @@ async function startPredictionFlow(foodName) {
 
         const data = await response.json();
         const textResponse = data.candidates[0].content.parts[0].text;
-        
+
         const cleanJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
         const nutrientData = JSON.parse(cleanJson);
-        
+
         foodDatabase[foodName] = nutrientData;
         addFoodToLog(foodName, nutrientData);
         foodInput.value = '';
-        
+
     } catch (error) {
         console.error("Prediction Error:", error);
         alert("AI Scan failed. " + error.message);
