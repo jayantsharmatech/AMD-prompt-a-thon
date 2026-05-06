@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NutriTrack | Smart Food & Health Monitor</title>
+    <title>NutriTrack | Futuristic Health Monitor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,33 +20,37 @@
     <div class="container">
         <header class="glass-header">
             <h1>NutriTrack</h1>
-            <p>Smart Food & Health Monitor</p>
+            <p>Advanced Predictive Nutrition</p>
         </header>
 
         <main class="grid-layout">
             <div class="left-column">
                 <section class="glass-card input-section">
-                    <h2>What did you eat?</h2>
+                    <h2>Log Nutrition Interface</h2>
                     <div class="input-wrapper">
-                        <input type="text" id="foodInput" placeholder="e.g., Apple, Pizza, Salad..." autocomplete="off">
-                        <button id="addBtn" class="btn-primary">Add Food</button>
+                        <input type="text" id="foodInput" placeholder="Search Database (e.g. Biryani, Salmon...)" autocomplete="off">
+                        <button id="addBtn" class="btn-primary">Scan & Add</button>
                         <div id="suggestionsBox" class="suggestions hidden"></div>
                     </div>
                 </section>
 
                 <section class="glass-card history-section">
-                    <h2>Today's Log</h2>
+                    <h2>Active Session Log</h2>
                     <ul id="foodList" class="food-list">
-                        <li class="empty-state">No foods logged yet. Start typing above!</li>
+                        <li class="empty-state">System standing by. Awaiting food input.</li>
                     </ul>
                 </section>
             </div>
 
             <div class="right-column">
                 <section class="glass-card dashboard-section">
-                    <h2>Daily Nutrition</h2>
+                    <h2>Metabolic Metrics</h2>
                     
-                    <div class="nutrient-tracker">
+                    <div class="chart-container">
+                        <canvas id="macroChart"></canvas>
+                    </div>
+
+                    <div class="nutrient-tracker mt-2">
                         <div class="nutrient-header">
                             <span>Calories</span>
                             <span id="calText">0 / 2000 kcal</span>
@@ -111,6 +116,45 @@
                 </section>
             </div>
         </main>
+    </div>
+
+    <!-- Custom Food Modal -->
+    <div id="customFoodModal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h2>Initialize Custom Entity</h2>
+            <div class="form-group">
+                <label>Entity Designation (Name)</label>
+                <input type="text" id="customName" placeholder="e.g. Synthesized Protein Block">
+            </div>
+            <div class="form-group grid-2">
+                <div>
+                    <label>Calories (kcal)</label>
+                    <input type="number" id="customCal" min="0" value="0">
+                </div>
+                <div>
+                    <label>Protein (g)</label>
+                    <input type="number" id="customProtein" min="0" value="0">
+                </div>
+                <div>
+                    <label>Fat (g)</label>
+                    <input type="number" id="customFat" min="0" value="0">
+                </div>
+                <div>
+                    <label>Carbs (g)</label>
+                    <input type="number" id="customCarbs" min="0" value="0">
+                </div>
+                <div>
+                    <label>Sugar (g)</label>
+                    <input type="number" id="customSugar" min="0" value="0">
+                </div>
+                <div>
+                    <label>Sodium (mg)</label>
+                    <input type="number" id="customSodium" min="0" value="0">
+                </div>
+            </div>
+            <button id="saveCustomBtn" class="btn-primary" style="width: 100%; margin-top: 1rem;">Uplink to Database</button>
+        </div>
     </div>
 
     <script src="script.js"></script>

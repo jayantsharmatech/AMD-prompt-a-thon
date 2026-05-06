@@ -1,20 +1,18 @@
-const foodDatabase = {
-    "apple": { calories: 95, protein: 0.5, fat: 0.3, carbs: 25, sugar: 19, sodium: 2 },
-    "pizza slice": { calories: 285, protein: 12, fat: 10, carbs: 36, sugar: 4, sodium: 640 },
-    "salad": { calories: 150, protein: 5, fat: 10, carbs: 12, sugar: 4, sodium: 150 },
-    "milk (1 cup)": { calories: 149, protein: 8, fat: 8, carbs: 12, sugar: 12, sodium: 105 },
-    "burger": { calories: 500, protein: 25, fat: 26, carbs: 40, sugar: 9, sodium: 1000 },
-    "soda (can)": { calories: 140, protein: 0, fat: 0, carbs: 39, sugar: 39, sodium: 45 },
-    "chicken breast": { calories: 165, protein: 31, fat: 3.6, carbs: 0, sugar: 0, sodium: 74 },
-    "white rice (1 cup)": { calories: 205, protein: 4.3, fat: 0.4, carbs: 45, sugar: 0.1, sodium: 2 },
-    "ice cream (1 scoop)": { calories: 137, protein: 2.3, fat: 7, carbs: 16, sugar: 14, sodium: 53 },
-    "almonds (1 oz)": { calories: 164, protein: 6, fat: 14, carbs: 6, sugar: 1.2, sodium: 0 },
-    "salmon (4 oz)": { calories: 236, protein: 22, fat: 15, carbs: 0, sugar: 0, sodium: 50 },
-    "banana": { calories: 105, protein: 1.3, fat: 0.3, carbs: 27, sugar: 14, sodium: 1 },
-    "french fries (med)": { calories: 365, protein: 4, fat: 17, carbs: 48, sugar: 0.5, sodium: 246 },
-    "oatmeal (1 cup)": { calories: 158, protein: 6, fat: 3.2, carbs: 27, sugar: 1.1, sodium: 115 },
-    "eggs (2 large)": { calories: 143, protein: 12.6, fat: 9.5, carbs: 0.7, sugar: 0.4, sodium: 142 }
-};
+let foodDatabase = {};
+let macroChart;
+
+// Initialize Chart on load
+document.addEventListener('DOMContentLoaded', () => {
+    initChart();
+});
+
+// Load database from file
+fetch('food_database.json')
+    .then(response => response.json())
+    .then(data => {
+        foodDatabase = data;
+    })
+    .catch(err => console.error('Error loading food database:', err));
 
 const dailyLimits = {
     calories: 2000,
@@ -34,13 +32,16 @@ let currentIntake = {
     sodium: 0
 };
 
+// Keep track of logged items with unique IDs
+let loggedFoods = [];
+
 const healthTips = {
-    calories: "You've exceeded your daily calorie goal. Try to incorporate some light exercise like walking or stretching to help burn off excess energy.",
-    protein: "High protein intake is generally fine, but ensure you're drinking plenty of water to help your kidneys process it.",
-    fat: "You're over your fat limit. Focus on lean proteins and veggies for your next meals to balance it out.",
-    carbs: "High carb intake can lead to energy crashes. Consider adding some fiber-rich foods to stabilize your blood sugar.",
-    sugar: "⚠️ High sugar intake! This can cause inflammation and energy spikes. Drink water and avoid sweet drinks or desserts for the rest of the day.",
-    sodium: "⚠️ High sodium alert! This can increase blood pressure. Drink extra water to help flush it out, and avoid salty snacks."
+    calories: "Energy capacity exceeded. Initiate metabolic burn via physical activity.",
+    protein: "High protein detected. Ensure adequate hydration for renal processing.",
+    fat: "Lipid limit reached. Prioritize lean fuel sources for subsequent intake.",
+    carbs: "Carbohydrate overload. Risk of energy crash. Stabilize with fiber.",
+    sugar: "⚠️ High sucrose alert. System inflammation risk. Hydrate and avoid sweets.",
+    sodium: "⚠️ High sodium alert. Blood pressure risk detected. Flush system with H2O."
 };
 
 let activeAlerts = new Set();
@@ -51,6 +52,63 @@ const suggestionsBox = document.getElementById('suggestionsBox');
 const addBtn = document.getElementById('addBtn');
 const foodList = document.getElementById('foodList');
 const alertsContainer = document.getElementById('alertsContainer');
+
+// Modal Elements
+const customFoodModal = document.getElementById('customFoodModal');
+const closeModalBtn = document.getElementById('closeModal');
+const saveCustomBtn = document.getElementById('saveCustomBtn');
+
+function initChart() {
+    const ctx = document.getElementById('macroChart').getContext('2d');
+    
+    // Gradient definitions could be added, but solid vibrant colors fit light theme well
+    macroChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Protein (g)', 'Fat (g)', 'Carbs (g)'],
+            datasets: [{
+                data: [0, 0, 0], // Initial empty state
+                backgroundColor: [
+                    '#6366f1', // Indigo
+                    '#f59e0b', // Amber/Orange
+                    '#10b981'  // Emerald
+                ],
+                borderColor: '#ffffff',
+                borderWidth: 2,
+                hoverOffset: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#0f172a',
+                        font: { family: 'Inter', size: 12, weight: '500' },
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#0f172a',
+                    bodyColor: '#0f172a',
+                    borderColor: 'rgba(14, 165, 233, 0.2)',
+                    borderWidth: 1,
+                    padding: 10,
+                    boxPadding: 4,
+                    usePointStyle: true
+                }
+            }
+        }
+    });
+}
 
 // Autocomplete logic
 foodInput.addEventListener('input', (e) => {
@@ -80,7 +138,16 @@ foodInput.addEventListener('input', (e) => {
             suggestionsBox.appendChild(div);
         });
     } else {
-        suggestionsBox.classList.add('hidden');
+        // Show "Add Custom Food" option
+        suggestionsBox.classList.remove('hidden');
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.innerHTML = `<span class="suggestion-name" style="color: #0ea5e9;">+ Init custom entry: "${val}"</span>`;
+        div.addEventListener('click', () => {
+            openCustomModal(val);
+            suggestionsBox.classList.add('hidden');
+        });
+        suggestionsBox.appendChild(div);
     }
 });
 
@@ -92,49 +159,90 @@ document.addEventListener('click', (e) => {
 });
 
 // Add Food logic
-addBtn.addEventListener('click', addFood);
-foodInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        suggestionsBox.classList.add('hidden');
-        addFood();
-    }
-});
-
-function addFood() {
+addBtn.addEventListener('click', () => {
     let foodName = foodInput.value.toLowerCase().trim();
     if (!foodName) return;
 
-    const nutrientData = foodDatabase[foodName];
-    
-    if (nutrientData) {
-        // Update history UI
-        const emptyState = document.querySelector('.empty-state');
-        if (emptyState) emptyState.remove();
-
-        const li = document.createElement('li');
-        li.innerHTML = `
-            <span class="food-name">${foodName.charAt(0).toUpperCase() + foodName.slice(1)}</span>
-            <span class="food-details">${nutrientData.calories} kcal | P: ${nutrientData.protein}g</span>
-        `;
-        foodList.prepend(li); // Add to top
-
-        // Update totals
-        currentIntake.calories += nutrientData.calories;
-        currentIntake.protein += nutrientData.protein;
-        currentIntake.fat += nutrientData.fat;
-        currentIntake.carbs += nutrientData.carbs;
-        currentIntake.sugar += nutrientData.sugar;
-        currentIntake.sodium += nutrientData.sodium;
-
-        updateDashboard();
-        checkLimits();
-
-        // Clear input
+    if (foodDatabase[foodName]) {
+        addFoodToLog(foodName, foodDatabase[foodName]);
         foodInput.value = '';
     } else {
-        // Handle unknown food
-        alert("Food not found in database. Try 'apple', 'pizza slice', or 'salad'.");
+        openCustomModal(foodName);
     }
+});
+
+foodInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        suggestionsBox.classList.add('hidden');
+        addBtn.click();
+    }
+});
+
+function addFoodToLog(name, nutrientData) {
+    const id = Date.now().toString() + Math.floor(Math.random() * 1000);
+    
+    loggedFoods.push({
+        id,
+        name,
+        nutrients: nutrientData
+    });
+
+    renderFoodList();
+    updateTotals();
+}
+
+// Ensure function is exposed globally for onclick handlers in innerHTML
+window.removeFoodFromLog = function(id) {
+    loggedFoods = loggedFoods.filter(food => food.id !== id);
+    renderFoodList();
+    updateTotals();
+}
+
+function renderFoodList() {
+    foodList.innerHTML = '';
+    
+    if (loggedFoods.length === 0) {
+        foodList.innerHTML = '<li class="empty-state">System standing by. Awaiting food input.</li>';
+        return;
+    }
+
+    // Render in reverse to show newest first
+    [...loggedFoods].reverse().forEach(food => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div class="food-item-content">
+                <span class="food-name">${food.name.charAt(0).toUpperCase() + food.name.slice(1)}</span>
+                <span class="food-details">${food.nutrients.calories} kcal | P: ${food.nutrients.protein}g</span>
+            </div>
+            <button class="remove-btn" title="Remove Data" onclick="removeFoodFromLog('${food.id}')">&times;</button>
+        `;
+        foodList.appendChild(li);
+    });
+}
+
+function updateTotals() {
+    // Reset totals
+    currentIntake = {
+        calories: 0,
+        protein: 0,
+        fat: 0,
+        carbs: 0,
+        sugar: 0,
+        sodium: 0
+    };
+
+    // Recalculate
+    loggedFoods.forEach(food => {
+        currentIntake.calories += food.nutrients.calories;
+        currentIntake.protein += food.nutrients.protein;
+        currentIntake.fat += food.nutrients.fat;
+        currentIntake.carbs += food.nutrients.carbs;
+        currentIntake.sugar += food.nutrients.sugar;
+        currentIntake.sodium += food.nutrients.sodium;
+    });
+
+    updateDashboard();
+    checkLimits();
 }
 
 function updateDashboard() {
@@ -144,13 +252,25 @@ function updateDashboard() {
     updateNutrient('carbs', 'carbs', 'g');
     updateNutrient('sugar', 'sugar', 'g');
     updateNutrient('sodium', 'sodium', 'mg');
+    
+    // Update Chart
+    if (macroChart) {
+        // Only update chart if there are actual macros logged, otherwise show 0
+        const totalMacros = currentIntake.protein + currentIntake.fat + currentIntake.carbs;
+        if (totalMacros > 0) {
+            macroChart.data.datasets[0].data = [currentIntake.protein, currentIntake.fat, currentIntake.carbs];
+        } else {
+            macroChart.data.datasets[0].data = [0, 0, 0];
+        }
+        macroChart.update();
+    }
 }
 
 function updateNutrient(prefix, key, unit) {
     const textEl = document.getElementById(`${prefix}Text`);
     const fillEl = document.getElementById(`${prefix}Fill`);
     
-    const current = Math.round(currentIntake[key] * 10) / 10; // 1 decimal place
+    const current = Math.round(currentIntake[key] * 10) / 10;
     const limit = dailyLimits[key];
     const percentage = Math.min((current / limit) * 100, 100);
     
@@ -160,14 +280,20 @@ function updateNutrient(prefix, key, unit) {
     if (current > limit) {
         textEl.classList.add('text-danger');
         fillEl.classList.add('over-limit');
+    } else {
+        textEl.classList.remove('text-danger');
+        fillEl.classList.remove('over-limit');
     }
 }
 
 function checkLimits() {
+    alertsContainer.innerHTML = ''; // clear all and rebuild
+    activeAlerts.clear();
+
     const nutrients = Object.keys(dailyLimits);
     
     nutrients.forEach(key => {
-        if (currentIntake[key] > dailyLimits[key] && !activeAlerts.has(key)) {
+        if (currentIntake[key] > dailyLimits[key]) {
             activeAlerts.add(key);
             createAlert(key);
         }
@@ -176,12 +302,12 @@ function checkLimits() {
 
 function createAlert(nutrientKey) {
     const iconMap = {
-        calories: '🔥',
-        protein: '🥩',
-        fat: '🥑',
-        carbs: '🍞',
-        sugar: '🍩',
-        sodium: '🧂'
+        calories: '⚡',
+        protein: '🧬',
+        fat: '🟡',
+        carbs: '🔷',
+        sugar: '⚠️',
+        sodium: '🔴'
     };
 
     const alertCard = document.createElement('div');
@@ -189,9 +315,48 @@ function createAlert(nutrientKey) {
     alertCard.innerHTML = `
         <div class="alert-icon">${iconMap[nutrientKey]}</div>
         <div class="alert-content">
-            <h3>High ${nutrientKey.charAt(0).toUpperCase() + nutrientKey.slice(1)} Alert</h3>
+            <h3>CRITICAL: High ${nutrientKey.toUpperCase()}</h3>
             <p>${healthTips[nutrientKey]}</p>
         </div>
     `;
-    alertsContainer.prepend(alertCard);
+    alertsContainer.appendChild(alertCard);
 }
+
+// Custom Modal Logic
+function openCustomModal(prefillName = "") {
+    document.getElementById('customName').value = prefillName.charAt(0).toUpperCase() + prefillName.slice(1);
+    document.getElementById('customCal').value = 0;
+    document.getElementById('customProtein').value = 0;
+    document.getElementById('customFat').value = 0;
+    document.getElementById('customCarbs').value = 0;
+    document.getElementById('customSugar').value = 0;
+    document.getElementById('customSodium').value = 0;
+    
+    customFoodModal.classList.remove('hidden');
+}
+
+closeModalBtn.addEventListener('click', () => {
+    customFoodModal.classList.add('hidden');
+});
+
+saveCustomBtn.addEventListener('click', () => {
+    const name = document.getElementById('customName').value.toLowerCase().trim();
+    if (!name) return;
+
+    const nutrientData = {
+        calories: parseFloat(document.getElementById('customCal').value) || 0,
+        protein: parseFloat(document.getElementById('customProtein').value) || 0,
+        fat: parseFloat(document.getElementById('customFat').value) || 0,
+        carbs: parseFloat(document.getElementById('customCarbs').value) || 0,
+        sugar: parseFloat(document.getElementById('customSugar').value) || 0,
+        sodium: parseFloat(document.getElementById('customSodium').value) || 0
+    };
+
+    // Save to our local memory database so it can be searched again in this session
+    foodDatabase[name] = nutrientData;
+    
+    addFoodToLog(name, nutrientData);
+    
+    customFoodModal.classList.add('hidden');
+    foodInput.value = '';
+});
